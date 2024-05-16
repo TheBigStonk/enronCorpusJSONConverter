@@ -35,31 +35,36 @@ def parse_email(file_path):
     with open(file_path, 'r', encoding=encoding) as file:
         lines = file.readlines()
 
-# Use a flag to note when headers are complete and content begins
-    headers_complete = False
-    for line in lines:
-        line = line.strip()
-        if line == '':
-            if not headers_complete:
-                # An empty line typically means headers are complete
-                headers_complete = True
-            continue
-        
-        if headers_complete:
-            email_details['Content'].append(line)
-        else:
-            header_match = re.match(r'^(\w+-\w+|\w+):(.*)', line)
-            if header_match:
-                key = header_match.group(1)
-                value = header_match.group(2).strip()
-                if key in email_details:
-                    email_details[key] = value
+ # Indicate that we are in the header section
+    in_headers = True
+    with open(file_path, 'r', encoding='utf-8') as file:
+        for line in file:
+            line = line.strip()
+            if in_headers:
+                if line == '':
+                    # Empty line indicates the end of headers
+                    in_headers = False
+                    continue
+                
+                header_match = re.match(r'^(\w+-\w+|\w+):(.*)', line)
+                if header_match:
+                    key = header_match.group(1)
+                    value = header_match.group(2).strip()
+                    if key in email_details:
+                        email_details[key] = value
+                    else:
+                        # If it's not a recognized header, start the content here
+                        in_headers = False
+                        email_details['Content'].append(line)
                 else:
-                    headers_complete = True  # Assume headers end if unexpected header found
-                    email_details['Content'].append(line)
+                    # If the line doesn't match the header format and we're in headers, it might be a continuation of a header value
+                    if email_details['Content']:
+                        email_details['Content'].append(line)
+                    else:
+                        # Add to the last known header's value if it looks like a continuation
+                        email_details[key] += ' ' + line
             else:
-                # No header pattern matched and headers are deemed complete
-                headers_complete = True
+                # All lines after headers are considered as part of the content
                 email_details['Content'].append(line)
 
     # Convert the list of Content lines into a single string
