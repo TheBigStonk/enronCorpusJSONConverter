@@ -32,12 +32,9 @@ def parse_email(file_path):
         result = chardet.detect(raw_data)
         encoding = result['encoding']
 
-    with open(file_path, 'r', encoding=encoding) as file:
-        lines = file.readlines()
-
  # Indicate that we are in the header section
     in_headers = True
-    with open(file_path, 'r', encoding='utf-8') as file:
+    with open(file_path, 'r', encoding=encoding) as file:
         for line in file:
             line = line.strip()
             if in_headers:
